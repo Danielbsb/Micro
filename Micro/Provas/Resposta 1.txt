@@ -1,0 +1,10 @@
+O que são sistemas embarcados?
+
+R: Sistemas Embarcados são sistemas dedicados a executar uma série de funções ou aplicações especificas ao projeto em questão por meio da integração de processos tais como análise e captação de dados, processamento e tomada de decisão.
+
+O que são sistemas microprocessados?
+
+R: 	Sistemas microprocessados são sistemas nos quais são utilizadas lógicas digitais, tais como funções lógicas e aritméticas a partir de microprocessdores a fim de executar ou processar dados analógicos(a partir de conversões A/D) ou digitais para uma aplicação específica.
+	A aplicação de sistemas microprocessados são observados na industria automotiva por meio de alguns sistemas embarcados que são responsáveis por processar dados a partir de sensores ou transdutores e informar, por meio de uma interface gráfica, dados e informações relevantes ao usuário desse veículo. Além disso, observam-se sistemas embarcados dedicados nos sistemas de freios(ABS), controle de estabilidade, controle de tração, dentre outros.
+	Já no ramo de eletrodomésticos, sistemas embarcados têm possibilitado a automatização de aparelhos elétricos, por meio de monitoramento, cálculos e temporizadores, o que os torna mais eficientes e inteligentes.
+	A atuação de sistemas microprocessados tem aplição também na área de automação industrial. Atualmente a possibilidade de gerenciar consumos, otimizar gastos e eficiencia de empresas e máquinas, são algumas das principais aplicações dessa tecnologia. Além disso, tornar mais facil a comunicação entre o usuário e máquina por meio de interfaces gráficas ou até mesmo a robotização de serviços são alguns dos processos que agilizam os processos de produção em uma industria, o que é possibilitado por meio desses sistemas.
