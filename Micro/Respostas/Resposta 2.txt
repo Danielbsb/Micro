@@ -1,0 +1,37 @@
+1. Quais as diferenças entre os barramentos de dados e de endereços?
+
+R: Barramento de dados é o nome dado às vias em que os dados manipulados entre os registradores, memórias e CPU. Já o barramento
+de endereços são os caminhos os quais os endereços de memórias e registradores são enviados.
+
+2. Quais as diferenças entre as memórias RAM e ROM ?
+
+r: As memórias RAM, SÃO memórias de acesso aleatório geralmente utilizadas em cálculos e dados intermediários de um processamento. Por ser uma memória de acesso aleatório a velocidade na leitura e escrita desse dado é elevada e a capacidade de memória é geralmente menor. Além disso, a memória RAM é volátil, ou seja, o armazenamento está condicionado ao fornecimento de energia elétrica ao sistema. Já as memorias do tipo ROM, são memórias geralmente destinadas apenas à leitura de dados por parte de um microcontrolador, esse tipo de memória possui uma capacidade maior de memória e são destinadas programa do microcontrolador ou à alguns dados importantes para o projeto em questão, visto que a sua memória é não volátil. Sua escrita é mais lenta que a memória RAM.
+
+Q3. Considere o código abaixo, de 12 linhas:
+
+    1.   #include <stdio.h>
+    2.   int main(void)
+    3.   {
+    4.      int i;
+    5.      printf("Insira um número inteiro: ");
+    6.      scanf("%d", &i);
+    7.      if(i%2)
+    8.         printf("%d eh impar.\n");
+    9.      else
+   10.         printf("%d eh par.\n");
+   11.      return 0;
+   12.   }
+
+Para este código, responda:
+	(a) A variável 'i' é armazenada na memória RAM ou ROM? Por quê?
+R: A variável i, por ser uma variável global intermediária que pode ser atualizada a qualquer momento, através de atribuições ou operações algébricas, é necessário que ela seja armazenada na memória RAM, visto que sua leitura e escrita deve ser rápida.
+	(b) O programa compilado a partir deste código é armazenado na memória RAM ou ROM? Por quê?
+R: O programa ocupa um espaço significativo de memória e é realizada apenas a sua leitura, o que justifica a escrita desse programa na memória ROM e assegura a integridade do programa quando a fonte energética for retirada. 
+
+Q4. A arquitetura Von Neumann possue o caminho de dados e de endereços compartilhadas para registradores de memória RAM e ROM, o que inviabiliza a leitura de dados da memória RAM e da memória ROM ao mesmo tempo, Por outro lado essa arquitetura facilita quanto a leitura constantes e variáveis, que não é distinguida nessa configuração. A arquitetura Harvard é a arquitetura na qual o caminho de dados e endereços para a memória RAM e ROM são separados, o que otimiza o processo de leitura de um dado volátil e a execução do programa, visto que podem ser lidos dados das duas memórias ao mesmo tempo, o que a torna mais eficiente do que a arquitetura Von Neumann nesse aspecto. Por outro lado, os dados provenientes de cálculos(constantes), devem ser armazenados na memória ROM para que essas sejam lidas da mesma forma que as variáveis presentes nas memórias.
+
+Q5. Considere a variável inteira 'i', armazenando o valor 0x8051ABCD. Se 'i' é armazenada na memória a partir do endereço 0x0200, como ficam este byte e os seguintes, considerando que a memória é:
+	(a) Little-endian? 0x0200 = CD ; 0x0201 = AB; 0x202 = 51; 0x203 = 80;
+    	(b) Big-endian? 0x0200 = 80; 0x201 = 51; 0x202 = AB; 0x203 = CD;
+Q6. Sabendo que o processador do MSP430 tem registradores de 16 bits, como ele soma duas variáveis de 32 bits?
+R: Para que seja possível manipular dados de 32bits, é necessário o uso das flags contidas no registrador STATUS, tais como as flags C, N, V, Z. Com a flag C, contida nesse registrador, é possível somar os 16 bits menos significativos e a partir dessa flag, realizar a operação novamente com os 16 bits mais significativos.
