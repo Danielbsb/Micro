@@ -11,3 +11,123 @@
 		a ^= 0x80; 
 	(f) Inverter o nibble mais significativo de 'a', e setar o nibble menos significativo de 'a'. 
 		a &= (a ^ 0xF0) & (0xF0) **
+
+2. Considerando a placa Launchpad do MSP430, escreva o código em C para piscar os dois LEDs ininterruptamente.
+#include <msp430g2553.h>
+#define BTN BIT2
+#define LED1 BIT0
+#define LED2 BIT6
+
+void main(void){
+
+	WDTCTL = WDTPW | WDTHOLD;
+	P1OUT = 0;
+	P1DIR = LED1 + LED2;
+
+	volatile unsigned int i;
+	for(;;)
+	{
+		P1OUT |= LED1 + LED2;
+		for(i = 0;i < 1000; i++){
+			P1OUT ^= (LED1 + LED2); 	
+		}
+	}
+}
+
+3. Considerando a placa Launchpad do MSP430, escreva o código em C para piscar duas vezes os dois LEDs sempre que o usuário pressionar o botão.
+
+#include <msp430g2553.h>
+#define BTN BIT2
+#define LED1 BIT0
+#define LED2 BIT6
+
+void main(void){
+
+	WDTCTL = WDTPW | WDTHOLD;
+	P1OUT = 0;
+	P1DIR = LED1 + LED2;
+
+	volatile unsigned int i,j;
+	for(;;)
+	{
+		if(P1IN & BTN == 0)
+			for(j = 0; j < 4; j++){
+				for(i = 0;i < 500; i++){
+				}
+				P1OUT ^= (LED1 + LED2);
+		} 	
+				
+	}
+}
+
+
+4. Considerando a placa Launchpad do MSP430, faça uma função em C que pisca os dois LEDs uma vez.
+
+void PiscaLed(){
+	P1OUT ^= (LED1 + LED2);
+	for(i = 0;i < 50000; i++){
+	}
+	P1OUT ^= (LED1 + LED2);
+}
+
+5. Reescreva o código da questão 2 usando a função da questão 4.
+
+#include <msp430g2553.h>
+#define BTN BIT2
+#define LED1 BIT0
+#define LED2 BIT6
+
+void PiscaLed(){
+	volatile unsigned int j;
+	P1OUT ^= (LED1 + LED2);
+	for(j = 0;j < 50000; j++){
+	}
+	P1OUT ^= (LED1 + LED2);
+}
+
+void main(void){
+
+	WDTCTL = WDTPW | WDTHOLD;
+	P1OUT = 0;
+	P1DIR = LED1 + LED2;
+
+	volatile unsigned int i;
+	for(;;)
+	{
+		if(P1IN & BTN == 0){
+			PiscaLed();
+			for(j = 0;j < 50000; j++){
+			}
+		}			
+	}
+}
+6. Reescreva o código da questão 3 usando a função da questão 4.
+
+#include <msp430g2553.h>
+#define BTN BIT2
+#define LED1 BIT0
+#define LED2 BIT6
+
+void PiscaLed(){
+	P1OUT ^= (LED1 + LED2);
+	for(i = 0;i < 50000; i++){
+	}
+	P1OUT ^= (LED1 + LED2);
+}
+
+void main(void){
+
+	WDTCTL = WDTPW | WDTHOLD;
+	P1OUT = 0;
+	P1DIR = LED1 + LED2;
+
+	volatile unsigned int i;
+	for(;;)
+	{
+		if(P1IN & BTN/ == 0)
+			PiscaLed();
+			for(i = 0; i < 50000; j++){
+			}
+			PiscaLed();			
+	}
+}
