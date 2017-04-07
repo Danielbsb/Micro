@@ -1,0 +1,3 @@
+httpwww.ti.comlitugslau208pslau208p.pdf
+https://bennthomsen.files.wordpress.com/2014/11/adc10bit.png
+https://github.com/DiogoCaetanoGarcia/Microcontroladores/blob/master/Refs/msp430g2553.h

@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1491417401 source:c:\users\daniel\documents\arquivos_faculdade\micro\micro\códigos_perguntas\calcula_raiz\main.c
+	<stdio.h>
+	<stdlib.h>
+
