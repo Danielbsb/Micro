@@ -1,0 +1,59 @@
+//---------------------------------------------------//
+POTENCIA EM C
+//---------------------------------------------------//
+
+int_potencia(int x, int N){
+	int sign = 0, p =1;
+	if(N < 0){
+		N =-N;
+		sign = 1;
+	}
+	while(N > 0){
+		P = Mult_Signed(x,p);
+		N--;
+	}
+	if(sign == 1)
+		return Div_signed(1,p);
+	else
+		return p;
+}
+//-------------------------------------------------//
+ASSEMBLY VERSION
+//-------------------------------------------------//
+		push R4
+		push R5
+Potencia:	clr R4;		; sign = 0
+		mov #1, R15	; p = 1
+		cmp #1,R14
+		jl While_pot
+		inv R14
+		inc R14
+		mov #1,R4
+While_pot: 	tst R14
+		jz While_pot_end
+		push R15
+		push R14
+		mov R5,R14
+		call Mult_signed
+		mov R15,R5
+		pop R14
+		pop R15
+		dec R14
+		jmp While_pot
+		jl While_pot_end
+		push R15
+		push R14
+While_pot_end:	cmp #1,R4
+		jne Pot_end
+		mov #1,R15
+		mov R5,R14
+		call Div_Signed
+		pop R5
+		pop R4
+		ret
+Pot_end:	mov R5,R15
+		pop R5
+		pop R4
+		ret
+//------------------------------------------//
+		 

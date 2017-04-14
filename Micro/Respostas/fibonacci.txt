@@ -1,0 +1,29 @@
+//--------------------------------------//
+FIBONACCI
+//--------------------------------------//
+void fibonacci(int A[], int N){
+	int i;
+	A[0] = 0;
+	A[1] = 1;
+	for(i = 2; i < N; i++){
+		A[i] = A[i-1] + A[i-2];
+	}
+}
+//--------------------------------------//
+ASSEMBLY_VERSION
+//--------------------------------------//
+fibonacci:	clr 0(R15)
+		mov #1, 2(R15)
+		mov #2, R13
+For_fibo:	cmp R14,R13
+		jge For_fibo_end
+		mov R13,R12 	; R12 = A + 2(i-2) => R12 = &A[i-2]
+		sub #2, R12	;	       ^
+		add R12,R12	;           ^
+		add R15,R12
+		mov 0(R12),4(R12) ; A[i]=A[i-2]
+		add 2(R12),4(R12) ; A[i] += A[i-1]
+		inc	R13
+		jmp For_fibo
+For_fibo_end:	ret
+//--------------------------------------//
