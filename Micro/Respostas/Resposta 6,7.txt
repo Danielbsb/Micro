@@ -7,7 +7,7 @@ Para cada questão, escreva funções em C e/ou sub-rotinas na linguagem Assembly d
 O protótipo da função é:
 Resposta:
    unsigned int Raiz_Quadrada(unsigned int S){
-        int interacoes = 15;
+        unsigned int interacoes = 15;
         float x0 = S;
         float x;
         int n;
@@ -15,36 +15,31 @@ Resposta:
             x = (x0 + (S/x0))/2;
             x0 = x;
         }
+	return (unsiged int)x;
     }
 
 (b) Escreva a sub-rotina equivalente na linguagem Assembly do MSP430. A variável 'S' é fornecida pelo registrador R15, e a raiz quadrada de 'S' (ou seja, a variável 'x') é fornecida pelo registrador R15 também.
-
-CalculaRaiz: 	mov.w R15,R12; copia o valor de "S" em R12.
-
 x0 = R13
 S = R15
-
-Divide:                   ;calcula div R15/R13 e guarda em R15 --> (R15 = R15/R13)
-	  mov.w #0,R12    ; registrador teste para divisao  		
-	  mov.w num2,R13  ; R13 é o denominador(x0)
-Mult: 	  add.w #0,R12    ; verifica se R12 é zero, retornando 0 na mult caso afirmativo//
-	  jz fimMult 	  ; ocorrerá apenas quando a mult for Zero.
-	  add.w R13,R14   ; copia R13(denominador) para R14(resultado da mult) 
-	  sub.w #1,R12    ; subtrai R12 (variavel teste) para determinar o fim da mult.
-	  jz fimMult	  ; se R12 for Zero, a multiplicação terminou
-	  jmp mult	  ; looping para somar repetidas vezes até R12 ser Zero.
-fimMult:		   
-	  cmp.w R14,R15   ; compara o resultado da mult com R15(numerador).
-	  jl.w pararDiv	  ; Se R15 for menor que R14(resultado_mult), então o valor anterior é o resultado da div...Divisão termina.
-	  add.w #1,R12	  ; Adc 1 na variavel teste e testa outro valor que multiplicando o denominador é igual ao numerador.
-	  jmp Mult        ; Multiplica por esse looping "n" valores com o denominador até esse valor exceder o numerador.
-pararDiv: sub #1,R14	  ; subtrai o valor testado(quando for maior que o numerador)e termina a divisão
-	  mov.w R14,R15   ; como o resultado deve ser mostrado em R15 ... R15 = R14.
-			  ; ------------------------------------------------------- 
-	  add.w R13,R15	  ; R15 = Xo + (S/Xo)
-	  rra.w R15	  ;       -----------
-			  ;            2
-
+CalculaRaiz: add.w #1,R11    ; calcula div R15/R13 e guarda em R15 --> (R15 = R15/R13)
+	     mov.w #0,R12    ; registrador que guarda o "resultado" primário para divisao  		
+             mov.w R15,R14   ; copia R15(numerador) para R14(registrador temporario). 
+	     jz fimMult	     ; se o numerador for Zero, a divisão termina
+looping:     sub.w R13,R14;  ; 
+             jn fimDiv	     ; se o valor de SUB R13,R14 for negativo então a divisão termina.
+	     cmp.w R14,R15   ; se a divisão for por zero, essa comparação permite terminar a div.
+	     jz fimDiv       ; should never happen.
+	     add.w #1,R12    ; vai adicionando um valor ao resultado até o resultado final.
+	     jmp looping     ; looping para somar repetidas vezes até R12 ser Zero.
+fimDiv: 		   
+			     ; ------------------------------------------------------- 
+	     add.w R13,R12   ; R15 = Xo + (S/Xo)
+	     rra.w R12	     ;       -----------
+	     mov.w R12,R15   ;            2
+	     sub.w #15,R11   ; analisa as 15 interações
+	     jn Fim          ; FIM
+	     jmp CalculaRaiz ; looping de interações	
+Fim	                     ;
 2. (a) Escreva uma função em C que calcule 'x' elevado à 'N'-ésima potência, seguindo o seguinte protótipo: 
 
 	int Potencia(int x, int N);
