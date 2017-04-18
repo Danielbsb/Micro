@@ -8,7 +8,7 @@ O protótipo da função é:
 Resposta:
    unsigned int Raiz_Quadrada(unsigned int S){
         unsigned int interacoes = 15;
-        float x0 = S;
+        float x0 = S/2;
         float x;
         int n;
         for(n = 0; n <= interacoes; n++){
@@ -24,8 +24,8 @@ S = R15
 CalculaRaiz: add.w #1,R11    ; calcula div R15/R13 e guarda em R15 --> (R15 = R15/R13)
 	     mov.w #0,R12    ; registrador que guarda o "resultado" primário para divisao  		
              mov.w R15,R14   ; copia R15(numerador) para R14(registrador temporario). 
-	     jz fimMult	     ; se o numerador for Zero, a divisão termina
-looping:     sub.w R13,R14;  ; 
+	     jz fimDiv	     ; se o numerador for Zero, a divisão termina
+looping:     sub.w R13,R14;  ; R14 = R14-R13
              jn fimDiv	     ; se o valor de SUB R13,R14 for negativo então a divisão termina.
 	     cmp.w R14,R15   ; se a divisão for por zero, essa comparação permite terminar a div.
 	     jz fimDiv       ; should never happen.
@@ -39,7 +39,7 @@ fimDiv:
 	     sub.w #15,R11   ; analisa as 15 interações
 	     jn Fim          ; FIM
 	     jmp CalculaRaiz ; looping de interações	
-Fim	                     ;
+Fim	     ret             ;
 2. (a) Escreva uma função em C que calcule 'x' elevado à 'N'-ésima potência, seguindo o seguinte protótipo: 
 
 	int Potencia(int x, int N);
@@ -48,13 +48,78 @@ Fim	                     ;
 
 3. Escreva uma sub-rotina na linguagem Assembly do MSP430 que calcula a divisão de 'a' por 'b', onde 'a', 'b' e o valor de saída são inteiros de 16 bits. 'a' e 'b' são fornecidos através dos registradores R15 e R14, respectivamente, e a saída deverá ser fornecida através do registrador R15.
 
+Resposta:
+//--------------------------------------------------------------------------------------------//
+CalculaDiv: mov.w #0,R12  ; Valor temporário da divisão
+	    mov.w R15,R13 ; R13 é o registrador temporário utilizado nas mini-divisoes.
+	    sub.w #0,R13  ; verifica a divisão por zero.
+	    jz FimDiv2    ; se dividir por zero, retorna FFFF.(should never happen)
+looping:    sub.w R13,R14 ; subtrai o numerador do denominador, para testar...
+	    jn FimDiv     ; divisao termina quando a subtração der negativa.
+	    inc.w R12     ; senão, vai incrementando o valor da divisao temporária.
+	    jmp looping   ; FOR
+FimDiv:     mov.w R12,R15 ; transmite o valor da divisão para R15
+	    ret	    
+FimDiv2:    mov.w #FFFFh, R15 ; transmite o valor "INFINITO" para R15
+	    ret
+//--------------------------------------------------------------------------------------------//
 4. Escreva uma sub-rotina na linguagem Assembly do MSP430 que calcula o resto da divisão de 'a' por 'b', onde 'a', 'b' e o valor de saída são inteiros de 16 bits. 'a' e 'b' são fornecidos através dos registradores R15 e R14, respectivamente, e a saída deverá ser fornecida através do registrador R15.
 
+Resposta:
+//--------------------------------------------------------------------------------------------//
+CalculaRST: mov.w R15,R13 ; R13 é o registrador temporário utilizado nas mini-divisoes.
+	    mov.w R15,R11 ; Valor no qual a divisão é por zero.
+	    sub.w #0,R13  ; verifica se a divisão é por zero.
+	    jz FimDiv     ; se dividir por zero, o resto é o próprio R15.
+looping:    mov.w R13,R11 ; resto da divisão será em R11, antes de subtrair o ultimo valor.
+	    sub.w R14,R13 ; R13 = R13 - R14 subtrai o numerador do denominador, para testar...
+	    jn FimDiv     ; divisao termina quando a subtração der negativa.
+	    jmp looping   ; FOR
+FimDiv:     mov.w R11,R15 ; transmite o valor do resto da div para R15
+	    ret	    
+//--------------------------------------------------------------------------------------------//
 5. (a) Escreva uma função em C que indica a primalidade de uma variável inteira sem sinal, retornando o valor 1 se o número for primo, e 0, caso contrário. Siga o seguinte protótipo:
 
-	int Primalidade(unsigned int x);
+Resposta:
+//---------------------------------------------------------------------------------------------//
+	int Primalidade(unsigned int x){
+	    unsigned int y = 0;
+	    int i;
+            for(i = 1; i <= x; i++){
+                if((x%i)== 0){
+                    y++;
+                }
+            }
+            if(y == 2)
+                return 1;
+            else
+                return 0;
+	}
+//---------------------------------------------------------------------------------------------//
 
 (b) Escreva a sub-rotina equivalente na linguagem Assembly do MSP430. A variável de entrada é fornecida pelo registrador R15, e o valor de saída também.
+
+Resposta
+//---------------------------------------------------------------------------------------------//
+Primalidade: mov.w #1,R14	; R14 é o valor do índice (i = 1).
+	     mov.w #0,R12	; R12 é o registrador que conta as vezes que o resto é zero.
+looping:     push.w R15		; Joga o valor de R15 (Número analisado) para a pilha para usar a função #CalculaRST.
+             call #CalculaRST
+	     inc.w R14		; i++ 
+	     cmp #0,R15		; R15, como é resultado da função CalculaRST, indica o resto da divisão de R15/R14. 
+	     jne Condition	; if(R15 == 0) -> R12 ++ //indica se o resto é zero.
+	     inc.w R12		;	 R12 ++ ;
+Condition:   pull.w R15;	; Resgata o valor de R15, que é o número a ser analisado.
+	     cmp.w R15,R14	; Quando i = R15, então a análise terminou.
+	     jeq FIM
+	     jmp looping	; FOR ...
+FIM:         cmp #2,R12         ; if(R12 == 2){ 
+	     jeq true		; 	R15 = 1;
+	     mov.w #0,R15	; }else{
+	     jmp false		;	R15 = 0;
+true:	     mov.w #1,R15	;      }
+false:	     ret     
+//---------------------------------------------------------------------------------------------//	     
 
 6. Escreva uma função em C que calcula o duplo fatorial de n, representado por n!!. Se n for ímpar, n!! = 1*3*5*...*n, e se n for par, n!! = 2*4*6*...*n. Por exemplo, 9!! = 1*3*5*7*9 = 945 e 10!! = 2*4*6*8*10 = 3840. Além disso, 0!! = 1!! = 1.
 O protótipo da função é:
