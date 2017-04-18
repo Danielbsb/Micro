@@ -123,9 +123,19 @@ false:	     ret
 
 6. Escreva uma função em C que calcula o duplo fatorial de n, representado por n!!. Se n for ímpar, n!! = 1*3*5*...*n, e se n for par, n!! = 2*4*6*...*n. Por exemplo, 9!! = 1*3*5*7*9 = 945 e 10!! = 2*4*6*8*10 = 3840. Além disso, 0!! = 1!! = 1.
 O protótipo da função é:
-
-	unsigned long long DuploFatorial(unsigned long long n);
-
+Resposta
+//---------------------------------------------------------------------------------------------//
+unsigned long long DuploFatorial(unsigned long long n){
+    unsigned long long Result = 1;
+    int i;
+    for(i = n; i >= 1; i--){
+        if((((n%2) == 0)&& ((i%2) == 0))||(((n%2)!= 0)&& ((i%2) != 0))){
+            Result = Result*i;
+        }
+    }
+    return Result;
+}
+//---------------------------------------------------------------------------------------------//
 7. (a) Escreva uma função em C que calcula a função exponencial da seguinte forma:
 	
 Considere o cálculo até o termo n = 20. O protótipo da função é double ExpTaylor(double x);

@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1492480536 source:c:\users\daniel\documents\arquivos_faculdade\micro\micro\códigos_perguntas\primalidade\main.c
+	<stdio.h>
+	<stdlib.h>
+	<math.h>
+
