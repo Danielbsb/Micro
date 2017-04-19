@@ -1,0 +1,52 @@
+#include "msp430.h"                     ; #define controlled include file
+
+        NAME    main                    ; module name
+
+        PUBLIC  main                    ; make the main label vissible
+                                        ; outside this module
+        ORG     0FFFEh
+        DC16    init                    ; set reset vector to 'init' label
+
+        RSEG    CSTACK                  ; pre-declaration of segment
+        RSEG    CODE                    ; place program in 'CODE' segment
+
+init:   MOV     #SFE(CSTACK), SP        ; set up stack
+
+main:   NOP                             ; main program
+        MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
+        mov.w #163,R15
+        call #Primalidade
+        JMP $                           ; jump to current location '$'
+                                        ; (endless loop)
+
+CalculaRST:  mov.w R15,R13 ; R13 é o registrador temporário utilizado nas mini-divisoes.
+	     mov.w R15,R11 ; Valor do resto para quando a divisão é por zero.
+	     sub.w #0,R13  ; verifica se a divisão é por zero.
+	     jz FimDiv     ; se dividir por zero, o resto é o próprio R15.
+looping:     mov.w R13,R11 ; resto da divisão será em R11, antes de subtrair o ultimo valor.
+	     sub.w R14,R13 ; R13 = R13 - R14 subtrai o numerador do denominador, para testar...
+	     jn FimDiv     ; divisao termina quando a subtração der negativa.
+	     jmp looping   ; FOR
+FimDiv:      mov.w R11,R15 ; transmite o valor do resto da div para R15
+             ret
+            
+Primalidade: mov.w #1,R14	; R14 é o valor do índice (i = 1).
+	     mov.w #0,R12	; R12 é o registrador que conta as vezes que o resto é zero.
+loop2:       push.w R15		; Joga o valor de R15 (Número analisado) para a pilha para usar a função #CalculaRST.
+             call #CalculaRST
+	     inc.w R14		; i++ 
+	     cmp #0,R15		; R15, como é resultado da função CalculaRST, indica o resto da divisão de R15/R14. 
+	     jne Condition	; if(R15 == 0) -> R12 ++ //indica se o resto é zero.
+	     inc.w R12		;	 R12 ++ ;
+Condition:   pop.w R15    	; Resgata o valor de R15, que é o número a ser analisado.
+	     cmp.w R14,R15	;  R15 - R14 // Quando i > R15, então a análise terminou.
+	     jn FIM
+	     jmp loop2	        ; FOR ...
+FIM:         cmp #2,R12         ; if(R12 == 2){ 
+	     jeq true		; 	R15 = 1;
+	     mov.w #0,R15	; }else{
+	     jmp false		;	R15 = 0;
+true:	     mov.w #1,R15	;      }
+false:	     ret 
+
+        END

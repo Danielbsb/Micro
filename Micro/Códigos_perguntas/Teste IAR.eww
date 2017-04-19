@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+    <project>
+        <path>$WS_DIR$\Primalidade\Assembly_debug.ewp</path>
+    </project>
+    <project>
+        <path>$WS_DIR$\Teste IAR.ewp</path>
+    </project>
+    <batchBuild />
+</workspace>

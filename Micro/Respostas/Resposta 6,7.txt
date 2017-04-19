@@ -67,16 +67,16 @@ FimDiv2:    mov.w #FFFFh, R15 ; transmite o valor "INFINITO" para R15
 
 Resposta:
 //--------------------------------------------------------------------------------------------//
-CalculaRST: mov.w R15,R13 ; R13 é o registrador temporário utilizado nas mini-divisoes.
-	    mov.w R15,R11 ; Valor no qual a divisão é por zero.
-	    sub.w #0,R13  ; verifica se a divisão é por zero.
-	    jz FimDiv     ; se dividir por zero, o resto é o próprio R15.
-looping:    mov.w R13,R11 ; resto da divisão será em R11, antes de subtrair o ultimo valor.
-	    sub.w R14,R13 ; R13 = R13 - R14 subtrai o numerador do denominador, para testar...
-	    jn FimDiv     ; divisao termina quando a subtração der negativa.
-	    jmp looping   ; FOR
-FimDiv:     mov.w R11,R15 ; transmite o valor do resto da div para R15
-	    ret	    
+CalculaRST:  mov.w R15,R13 ; R13 é o registrador temporário utilizado nas mini-divisoes.
+	     mov.w R15,R11 ; Valor do resto para quando a divisão é por zero.
+	     sub.w #0,R13  ; verifica se a divisão é por zero.
+	     jz FimDiv     ; se dividir por zero, o resto é o próprio R15.
+looping:     mov.w R13,R11 ; resto da divisão será em R11, antes de subtrair o ultimo valor.
+	     sub.w R14,R13 ; R13 = R13 - R14 subtrai o numerador do denominador, para testar...
+	     jn FimDiv     ; divisao termina quando a subtração der negativa.
+	     jmp looping   ; FOR
+FimDiv:      mov.w R11,R15 ; transmite o valor do resto da div para R15
+             ret   
 //--------------------------------------------------------------------------------------------//
 5. (a) Escreva uma função em C que indica a primalidade de uma variável inteira sem sinal, retornando o valor 1 se o número for primo, e 0, caso contrário. Siga o seguinte protótipo:
 
@@ -109,9 +109,9 @@ looping:     push.w R15		; Joga o valor de R15 (Número analisado) para a pilha p
 	     cmp #0,R15		; R15, como é resultado da função CalculaRST, indica o resto da divisão de R15/R14. 
 	     jne Condition	; if(R15 == 0) -> R12 ++ //indica se o resto é zero.
 	     inc.w R12		;	 R12 ++ ;
-Condition:   pull.w R15;	; Resgata o valor de R15, que é o número a ser analisado.
-	     cmp.w R15,R14	; Quando i = R15, então a análise terminou.
-	     jeq FIM
+Condition:   pop.w R15          ; Resgata o valor de R15, que é o número a ser analisado.
+	     cmp.w R14,R15	;  COMP(R14-R15) Quando i > R15, então a análise terminou.
+	     jn FIM
 	     jmp looping	; FOR ...
 FIM:         cmp #2,R12         ; if(R12 == 2){ 
 	     jeq true		; 	R15 = 1;
@@ -136,6 +136,17 @@ unsigned long long DuploFatorial(unsigned long long n){
     return Result;
 }
 //---------------------------------------------------------------------------------------------//
+Outra opcao
+//---------------------------------------------------------------------------------------------//
+unsigned long long DuploFatorial(unsigned long long n)
+{
+	if(n < 2) return 1;
+	unsigned long long retn = 1;
+		for(unsigned long long i = n; i >= 2; i=i-2)
+			retn *= i;
+	return retn;
+}
+//---------------------------------------------------------------------------------------------//
 7. (a) Escreva uma função em C que calcula a função exponencial da seguinte forma:
 	
 Considere o cálculo até o termo n = 20. O protótipo da função é double ExpTaylor(double x);
@@ -153,6 +164,14 @@ O primeiro endereço do vetor 'a' deverá ser passado através do registrador R15, 
 10. (a) Escreva uma função em C que indica se um vetor é palíndromo. Por exemplo:
 	[1 2 3 2 1] e [0 10 20 20 10 0] são palíndromos.
 	[5 4 3 2 1] e [1 2 3 2] não são.
+
+ int Palindromo(int vetor[], int tamanho)
+{
+for (int i = 0; i < tamanho >> 1; i++)
+	if (vetor[i] != vetor[tamanho - i - 1]) 
+		return 0;
+	return 1;
+}
 Se o vetor for palíndromo, retorne o valor 1. Caso contrário, retorne o valor 0. O protótipo da função é:
 
 	int Palindromo(int vetor[ ], int tamanho);

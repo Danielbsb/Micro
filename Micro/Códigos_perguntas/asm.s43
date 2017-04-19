@@ -1,0 +1,33 @@
+#include "msp430.h"                     ; #define controlled include file
+
+        NAME    main                    ; module name
+
+        PUBLIC  main                    ; make the main label vissible
+                                        ; outside this module
+        ORG     0FFFEh
+        DC16    init                    ; set reset vector to 'init' label
+
+        RSEG    CSTACK                  ; pre-declaration of segment
+        RSEG    CODE                    ; place program in 'CODE' segment
+
+init:   MOV     #SFE(CSTACK), SP        ; set up stack
+
+main:   NOP                             ; main program
+        MOV.W   #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
+        call #CalculaRST
+        JMP $                           ; jump to current location '$'
+                                        ; (endless loop)
+CalculaRST: mov.w #12,R15
+            mov.w #5,R14
+            mov.w R15,R13 ; R13 é o registrador temporário utilizado nas mini-divisoes.
+	    mov.w R15,R11 ; Valor do resto para quando a divisão é por zero.
+	    sub.w #0,R13  ; verifica se a divisão é por zero.
+	    jz FimDiv     ; se dividir por zero, o resto é o próprio R15.
+looping:    mov.w R13,R11 ; resto da divisão será em R11, antes de subtrair o ultimo valor.
+	    sub.w R14,R13 ; R13 = R13 - R14 subtrai o numerador do denominador, para testar...
+	    jn FimDiv     ; divisao termina quando a subtração der negativa.
+	    jmp looping   ; FOR
+FimDiv:     mov.w R11,R15 ; transmite o valor do resto da div para R15
+            ret
+       
+       END
