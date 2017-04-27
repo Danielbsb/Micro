@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+    Resto(int A, int B){
+    int i = A;
+    while(i >= B){
+        i -= B;
+    }
+    return i;
+    }
 int main()
 {
-    printf("Hello world!\n");
-    return 0;
+    int j = Resto(10,7);
+    printf("%d",j);
 }
