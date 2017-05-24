@@ -1,0 +1,28 @@
+  void Atraso(volatile unsigned int x){
+
+    int i = 0;
+    TA0CTL = MC_1 + ID_0 + TASSEL_2;
+    TA0CCR0 = 999;
+
+    while(i < x){
+      if(TA0CTL & TAIFG){
+          i ++;
+          TA0CTL &= ~TAIFG;
+      }
+    }
+    TA0CTL = MC_0;
+    }
+
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    for(;;){
+        P1OUT |= BIT0;
+        Atraso(1000);
+        P1OUT &= ~BIT0;
+        Atraso(1000);
+    }
+	return 0;
+}

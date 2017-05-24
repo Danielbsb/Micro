@@ -1,0 +1,69 @@
+#include <msp430g2553.h>
+#define CHPX1 BIT0
+#define CHPX2 BIT1
+#define CHPX3 BIT2
+#define CHPXS (CHPX1 + CHPX2 + CHPX3)
+void Charlie_on (char CHPX_OUT, char CHPX_ON)
+{
+	P1OUT &= ~CHPX5;
+	P1DIR &= ~CHPX3;
+	P1DIR |= CHPX_OUT;
+	P1OUT |= CHPX_ON;
+}
+
+void Charlie_acende_2 (void){
+	unsigned int i;
+	for(i = 0; i < 0xFFFF; i++)
+	{
+		Charlie_on (CHPX1 + CHPX2, CHX1);
+		Charlie_on (CHPX1 + CHPX2, CHPX2);
+	}
+	for(i = 0; i< 0xFFFF; i++)
+	{
+		Charlie_on(CHPX2 + CHPX3, CHPX2);
+		Charlie_on(CHPX2 + CHPX3, CHPX3);
+	}
+	for(i = 0; i < 0xFFFF; i++)
+	{
+		Charlie_on(CHPX1 + CHPX3, CHPX1);
+		Charlie_on(CHPX1 + CHPX3, CHPX3);
+	}	
+}
+int main (void)
+{	
+	WDTCTL = WDTPW | WDTHOLD;
+	char outs[] = {CHPX1 + CHPX2, 
+		       CHPX1 + CHPX2,
+		       CHPX2 + CHPX3,
+		       CHPX2 + CHPX3,
+		       CHPX1 + CHPX3,
+		       CHPX1 + CHPX3};
+	char ons[]= {CHPX1, CHPX2, CHPX1, CHPX3};
+	char e;
+	while(1)
+	{
+/*		P1DIR = CHPX1 + CHPX2;
+		P1OUT = CHPX1;
+		P1OUT = CHPX2;
+		P1DIR = CHPX2 + CHPX3;
+		P1OUT = CHPX2;
+		P1OUT = CHPX3;
+		P1DIR = CHPX1 + CHPX3;
+		P1OUT = CHPX1;
+		P1OUT = CHPX3;
+*/
+
+/*		Charlie_on(CHPX1 + CHPX2,CHPX1);
+		Charlie_on(CHPX1 + CHPX2,CHPX2);
+		Charlie_on(CHPX2 + CHPX3,CHPX2);
+		Charlie_on(CHPX2 + CHPX3,CHPX3);
+		Charlie_on(CHPX1 + CHPX3,CHPX1);
+		Charlie_on(CHPX1 + CHPX3,CHPX3);
+*/
+		for(e = 0; e < 6; e++){
+			Charlie_on (out[e]), ons[e]);
+		}
+
+	}
+	return 0;
+}

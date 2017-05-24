@@ -1,28 +1,20 @@
 
 1. Escreva uma função em C que faz o debounce de botões ligados à porta P1.
-void main(void){
 
-    WDTCTL = WDTPW | WDTHOLD; // "Desliga" o watchdog timer
-    P1OUT = 0x00; // Valor inicial das portas P1.
-    P1DIR = BIT0 | BIT6; //P1DIR = 1000 0001
-    P1REN |= BTN; // P1REN = 0000 1000 -> Ligar o resistor conectado ao pino 3.
-    P1OUT |= BTN; // P1OUT = 0000 1000 e P1IN = 0000 1000 -> Configura resistor para pull-up
-    int DebouncedButton = 0;
-    int counter;
-    for(;;)
-    {
-        while((P1IN & BIT3) == 0){  //0000 1000 and 0000 1000
-            if(counter == 0){
-                DebouncedButton = 1;
-                break;
-            }else{
+int Debounce_button(int BIT){
+    unsigned int counter = 1000; // 1Mhz / 1000 = 1ms debouncing
+
+        while((P1IN & BIT) == 0){  //0000 1000 and 0000 1000
+            if(counter == 0)
+                return  1;
+            else
                 counter --;
-            }
         }
-        if(P1IN & BIT3){
-            DebouncedButton = 0;
+        if(P1IN & BIT){
+            return  0;
         }
             counter = 1000;
+}
 
 2. Escreva um código em C que lê 9 botões multiplexados por 6 pinos, e pisca os LEDs da placa Launchpad de acordo com os botões. Por exemplo, se o primeiro botão é pressionado, os LEDs piscam uma vez; se o segundo botão é pressionado, os LEDs piscam duas vezes; e assim por diante. Se mais de um botão pressionado, os LEDs não piscam.
 

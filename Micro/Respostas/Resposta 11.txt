@@ -1,0 +1,154 @@
+1. Defina a função void Atraso(volatile unsigned int x); que fornece um atraso de 'x' milissegundos. Utilize o Timer_A para a contagem de tempo, e assuma que o SMCLK já foi configurado para funcionar a 1 MHz. Esta função poderá ser utilizada diretamente nas outras questões desta prova.
+
+  void Atraso(volatile unsigned int x){
+
+    int i = 0;
+    TA0CTL = MC_1 + ID_0 + TASSEL_2;
+    TA0CCR0 = 999;
+
+    while(i < x){
+      if(TA0CTL & TAIFG){
+          i ++;
+          TA0CTL &= ~TAIFG;
+      }
+    }
+    TA0CTL = MC_0;
+    }
+
+
+2. Pisque os LEDs da Launchpad numa frequência de 100 Hz.
+
+// O periodo equivalente a 1hz é 1/100Hz = 10 ms ... logo 
+// cada estágio deve permanecer T/2 para completar um período.
+
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    for(;;){
+        P1OUT |= BIT0;
+        Atraso(5);
+        P1OUT &= ~BIT0;
+        Atraso(5);
+    }
+	return 0;
+}
+
+3. Pisque os LEDs da Launchpad numa frequência de 20 Hz.
+
+// Da mesma forma, 1/20 = 50 ms => 25 + 25
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    for(;;){
+        P1OUT |= BIT0;
+        Atraso(25);
+        P1OUT &= ~BIT0;
+        Atraso(25);
+    }
+	return 0;
+}
+
+4. Pisque os LEDs da Launchpad numa frequência de 1 Hz.
+
+// T = 1/1Hz = 1s = 1000 ms
+
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    for(;;){
+        P1OUT |= BIT0;
+        Atraso(500);
+        P1OUT &= ~BIT0;
+        Atraso(500);
+    }
+	return 0;
+}
+
+5. Pisque os LEDs da Launchpad numa frequência de 0,5 Hz.
+
+// T = 1/0,5 = 2000 ms
+
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    for(;;){
+        P1OUT |= BIT0;
+        Atraso(1000);
+        P1OUT &= ~BIT0;
+        Atraso(1000);
+    }
+	return 0;
+}
+
+
+6. Repita as questões 2 a 5 usando a interrupção do Timer A para acender ou apagar os LEDs.
+
+7. Defina a função void paralelo_para_serial(void); que lê o byte de entrada via porta P1 e transmite os bits serialmente via pino P2.0. Comece com um bit em nivel alto, depois os bits na ordem P1.0 - P1.1 - … - P1.7 e termine com um bit em nível baixo. Considere um período de 1 ms entre os bits.
+
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+    P1OUT &= ~BIT0;
+    P1DIR |= BIT0;
+
+    for(;;){
+        P1OUT |= BIT0;
+        Atraso(1000);
+        P1OUT &= ~BIT0;
+        Atraso(1000);
+    }
+	return 0;
+}
+
+
+8. Faça o programa completo que lê um byte de entrada serialmente via pino P2.0 e transmite este byte via porta P1. O sinal serial começa com um bit em nivel alto, depois os bits na ordem 0-7 e termina com um bit em nível baixo. Os pinos P1.0-P1.7 deverão corresponder aos bits 0-7, respectivamente. Considere um período de 1 ms entre os bits.
+
+  void Atraso(volatile unsigned int x){
+
+    int i = 0;
+    TA0CTL = MC_1 + ID_0 + TASSEL_2;
+    TA0CCR0 = 999;
+
+    while(i < x){
+      if(TA0CTL & TAIFG){
+          i ++;
+          TA0CTL &= ~TAIFG;
+      }
+    }
+    TA0CTL = MC_0;
+    }
+int main(void) {
+    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+	P1OUT = 0x00;   // define o nível lógico de entrada(pull_down)
+	P1DIR = 0x00;   // '0' é entrada e '1' é saída
+	P1REN = 0xFF;   // habilitar os resistores de pulldown
+	P2OUT = 0x00;   // inicializa as portas P2 com nível lógico baixo
+	P2DIR |= BIT0;   // '1' é saida, loogo define P2.0 como saída.
+
+	int i = 0;  //indice
+	for(;;){
+	   P2OUT |= BIT0;   // No inicio da transmissão o bit
+	   Atraso(1);    // período para a taxa de transmissão (1ms)
+	   for(i = 0; i<=7; i++){   // esse laço irá analisar o nível lógico de cada bit com a operação AND.
+	       if(P1IN & 1<<i)  // analise começa no BIT0
+	           P2OUT |= BIT0;
+	       else
+	           P2OUT &= ~BIT0;
+	       Atraso(1);
+	   }
+	   P2OUT &= ~BIT0;
+	   Atraso(1);
+	}
+	
+	return 0;
+}
+
+9. Defina a função void ConfigPWM(volatile unsigned int freqs, volatile unsigned char ciclo_de_trabalho); para configurar e ligar o Timer_A em modo de comparação. Considere que o pino P1.6 já foi anteriormente configurado como saída do canal 1 de comparação do Timer_A, que somente os valores {100, 200, 300, …, 1000} Hz são válidos para a frequência, que somente os valores {0, 25, 50, 75, 100} % são válidos para o ciclo de trabalho, e que o sinal de clock SMCLK do MSP430 está operando a 1 MHz.
+
