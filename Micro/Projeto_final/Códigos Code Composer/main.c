@@ -1,10 +1,10 @@
 #include <msp430.h> 
 
 // ---- Portas MSP utilizadas e sua função ----  //
-#define BTN1 BIT3   // move up
-#define BTN2 BIT7   // move down
-#define BTN3 BIT1   // move left
-#define BTN4 BIT0   // move right
+//#define BTN1 BIT3   // move up
+//#define BTN2 BIT7   // move down
+//#define BTN3 BIT1   // move left
+//#define BTN4 BIT0   // move right
 #define CLK BIT2    // pino 13 do MAX7219
 #define LOAD BIT4   // pino 12 do MAX7219
 #define DIN BIT5    // pino 1 do MAX7219
@@ -28,17 +28,40 @@
 #define max7219_reg_shutdown 0x0c
 #define max7219_reg_displayTest 0x0f
 //--------------------------------------------------------------------------------//
+#define PWR_MGMT_1 0x6B      // MPU-6050 register address
+#define ACCEL_XOUT_H 0x3B    // MPU-6050 register address
+#define ACCEL_XOUT_L 0x3C    // MPU-6050 register address
+#define ACCEL_YOUT_H 0x3D    // MPU-6050 register address
+#define ACCEL_YOUT_L 0x3E    // MPU-6050 register address
+#define ACCEL_ZOUT_H 0x3F    // MPU-6050 register address
+#define ACCEL_ZOUT_L 0x40    // MPU-6050 register address
+//--------------------------------------------------------------------------------//
+#define limite_superior 500
+#define limite_medio 250
+#define limite_analise 300
+//--------------------------------------------------------------------------------//
+unsigned char RX_Data[6];
+unsigned char TX_Data[2];
+unsigned char RX_ByteCtr;
+unsigned char TX_ByteCtr;
+unsigned char slaveAddress = 0x68;
+int xAccel;
+int yAccel;
+
+volatile unsigned int up = 0,down = 0, left = 0, right = 0; // Variáveis para deslocar o LED nas coordenadas x e y
 
 const int maxInUse = 1;
+
 int buffer[8];
 int limits[8] = {0xff,0x81,0x81,0x81,0x81,0x81,0x80,0xff};
 int limits0[8];
+
 int x1;
 unsigned int portalIndex = 0;
 unsigned int portalX = 0b10000000;
 unsigned int portalY = 0b00000010;
-unsigned int zero = 1;
-unsigned int eight = 0;
+//unsigned int zero = 1;
+//unsigned int eight = 0;
 unsigned int linha = 0; // Coordenadas de movimentação do LED.
 unsigned int coluna = 0;
 // Teste 2
@@ -55,6 +78,49 @@ void move_LED(int direction, int axis){
         hold = 1;
 }
 */
+
+long map(long Accel, long in_min, long in_max, long out_min, long out_max)
+{
+  return (Accel - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void i2cInit(void)
+{
+    // set up I2C module
+    UCB0CTL1 |= UCSWRST;                // Enable SW reset
+    UCB0CTL0 = UCMST + UCMODE_3 + UCSYNC;           // I2C Master, synchronous mode
+    UCB0CTL1 = UCSSEL_2 + UCSWRST;          // Use SMCLK, keep SW reset
+    UCB0BR0 = 10;                   // fSCL = SMCLK/12 = ~100kHz
+    UCB0BR1 = 0;
+    UCB0CTL1 &= ~UCSWRST;               // Clear SW reset, resume operation
+}
+
+void i2cWrite(unsigned char address)
+{
+    //__disable_interrupt();
+    IE2 &= ~UCB0TXIE;                   // desabilita o interrupt
+    UCB0I2CSA = address;                // Load slave address
+    IE2 |= UCB0TXIE;                // Enable TX interrupt
+    while(UCB0CTL1 & UCTXSTP);          // Ensure stop condition sent
+    UCB0CTL1 |= UCTR + UCTXSTT;         // TX mode and START condition
+    //__bis_SR_register(GIE);
+    //while((IFG2 & UCB0TXIFG) == 0);
+    __bis_SR_register( LPM0_bits + GIE);        // sleep until UCB0TXIFG is set ...
+}
+
+void i2cRead(unsigned char address)
+{
+    //__disable_interrupt();
+    IE2 &= ~UCB0RXIE;                   // desabilita o interrupt
+    UCB0I2CSA = address;                // Load slave address
+    IE2 |= UCB0RXIE;                // Enable RX interrupt
+    while(UCB0CTL1 & UCTXSTP);          // Ensure stop condition sent
+    UCB0CTL1 &= ~UCTR;              // RX mode
+    UCB0CTL1 |= UCTXSTT;                // Start Condition
+    //__bis_SR_register(GIE);
+    //while((IFG2 & UCB0RXIFG) == 0);
+    __bis_SR_register(LPM0_bits + GIE);        // sleep until UCB0RXIFG is set ...
+}
 
 int Debounce_button(int BIT)
 {
@@ -157,6 +223,7 @@ void clearDisplay()
 void changeMap()
 {
 int i = 0;
+
     for(i = 0; i < 8; i++){
         if(i == portalIndex) // Se a coluna mover-se
         {
@@ -170,26 +237,40 @@ int i = 0;
             limits[i] = limits0[i];
     }
 }
-
+//
 int main()
 {
     WDTCTL = WDTPW | WDTHOLD;   // Stop watchdog timer
+
     BCSCTL1 = CALBC1_1MHZ;  // seleciona o Master clock de 1Mhz
     DCOCTL = CALDCO_1MHZ;   // seleciona o clock de 1Mhz
-    P1OUT = 0x00;   // Valor inicial da porta P1
-    P1DIR = 0x00;
+
+    P1OUT |= CLK + DIN + LOAD;   // Valor inicial da porta P1
     P1DIR |= DIN + CLK + LOAD;  // Define os botões como entrada
-    P1REN = (BTN1 + BTN2 + BTN3 + BTN4);        // Habilita os resistores (Pull-up)
-    P1OUT |= (BTN1 + BTN2 + BTN3 + BTN4);       // Define os resistores dos botões como Pull-up
-    TA0CTL = MC_1 + ID_0 + TASSEL_2 + TAIE;     // Modo de contagem contínua / sem divisão de clock / Master Clock(1Mhz)
-    TA0CCR0 = 9999; // A cada 10 ms o mapa é mudado com a interrupção do timer0
+
+    //P1REN = (BTN1 + BTN2 + BTN3 + BTN4);        // Habilita os resistores (Pull-up)
+    //P1OUT |= (BTN1 + BTN2 + BTN3 + BTN4);       // Define os resistores dos botões como Pull-up
+
+    //TA0CTL = MC_1 + ID_0 + TASSEL_2 + TAIE;     // Modo de contagem contínua / sem divisão de clock / Master Clock(1Mhz)
+    //TA0CCR0 = 9999; // A cada 10 ms o mapa é mudado com a interrupção do timer0
+    //__bis_SR_register(GIE);
+
+    P1SEL |= BIT6 + BIT7;                   // Assign I2C pins to USCI_B0
+    P1SEL2|= BIT6 + BIT7;                   // Assign I2C pins to USCI_B0
+    i2cInit();
+    slaveAddress = 0x68;                    // MPU-6050 address
+    TX_Data[1] = 0x6B;                      // address of PWR_MGMT_1 register
+    TX_Data[0] = 0x00;                      // set register to zero (wakes up the MPU-6050)
+    TX_ByteCtr = 2;
+    i2cWrite(slaveAddress);
+
     setReg(max7219_reg_scanLimit, 0x07);        // Define o valor máximo de colunas a ser escaneada
     setReg(max7219_reg_decodeMode, 0x00);       // Cada segmento receberá o valor enviado ao registrador sem decodificação
     setReg(max7219_reg_shutdown, 0x01);         // "Liga" o MAX7219 (Normal operation)
     setReg(max7219_reg_displayTest, 0x00);      // Desliga o modo teste.
     setReg(max7219_reg_intensity, 0x0F & 0x0F); // Define a intensidade de brilho dos leds(0x00-0x0f)
-    __bis_SR_register(GIE);
-    volatile unsigned int up = 0,down = 0, left = 0, right = 0; // Variáveis para deslocar o LED nas coordenadas x e y
+
+
     unsigned int hold = 1; // Variável para travar a condição quando o botão for pressionado
     unsigned int i = 0; // index
     clearDisplay(); // Limpa o display
@@ -208,6 +289,29 @@ int main()
 
     for(;;){
 
+        // Point to the ACCEL_ZOUT_H register in the MPU-6050
+        slaveAddress = 0x68;                    // MPU-6050 address
+        TX_Data[0] = 0x3B;                  // register address
+        TX_ByteCtr = 1;
+        i2cWrite(slaveAddress);
+
+        // Read the two bytes of data and store them in zAccel
+        slaveAddress = 0x68;                    // MPU-6050 address
+        RX_ByteCtr = 6;
+        i2cRead(slaveAddress);
+
+        xAccel  = RX_Data[5] << 8;              // MSB
+        xAccel |= RX_Data[4];                   // LSB
+        yAccel  = RX_Data[3] << 8;              // MSB
+        yAccel |= RX_Data[2];                   // LSB
+
+        //zAccel  = RX_Data[1] << 8;              // MSB
+        //zAccel |= RX_Data[0];                   // LSB
+
+        left = map(xAccel,0,20000,limite_medio,limite_superior);
+        right = map(xAccel,0,-20000,limite_medio,limite_superior);
+        up = map(yAccel,0,20000,limite_medio,limite_superior);
+        down = map(yAccel,0,-20000,limite_medio,limite_superior);
 
         // Laço responsável por enviar as coordenadas certas ao LED
         // Ele atualiza o valor enviado para o buffer[8] com as coordenadas atuais
@@ -220,27 +324,35 @@ int main()
 
         screenUpdate();
 
-        up    = Debounce_button(BTN1);   // Analisa o estado dos botões (esse processo pode levar 5 ms)
+        /*up    = Debounce_button(BTN1);   // Analisa o estado dos botões (esse processo pode levar 5 ms)
         down  = Debounce_button(BTN2);   // Para mudar essa lógica, basta colocar a variável do acelerômetro no lugar do "Debouce ..."
         left  = Debounce_button(BTN3);
         right = Debounce_button(BTN4);
-
-        if(up & hold)  // se pressionarmos o botão 1, o led deve andar uma posição para cima, logo, ele deve saltar de linha.
+         */
+        if((up > limite_analise) && (down < limite_analise) && (left < limite_analise) && (right < limite_analise))  // se pressionarmos o botão 1, o led deve andar uma posição para cima, logo, ele deve saltar de linha.
         {
             x1 = (x1 >> 1); // desloca o bit referente ao LED, cuja coordenada inicial é "00010000"
+
             if((x1 & 0xFF) != 1)    // Condição para colisão com a borda
                 linha = x1;
             else
             {
                 if(limits[coluna] == 0x80)
+                {
                     changeMap();
-                x1 = x0;
-                linha = x0;
-                coluna = y0;
+                    x1 = x0;
+                    linha = x0;
+                    coluna = y0;
+                }else{
+                    x1 = 0x02;
+                    linha = 0x02;
+                }
+                    //coluna = y0;
             }
-            hold = 0;   // segurando o hold, necessario pois o ciclo de clock incrementaria mais de uma linha.
+            delay(500 - up);
+            // segurando o hold, necessario pois o ciclo de clock incrementaria mais de uma linha.
         }
-        else if(down & hold)  // processo se repete para os outros comandos
+        else if((down > limite_analise) && (left < limite_analise) && (right < limite_analise) && (up < limite_analise))  // processo se repete para os outros comandos
         {
             x1 = (x1 << 1);
             if((x1 & 0xFF) != 128)  // Condição para colisão com a borda
@@ -248,47 +360,70 @@ int main()
             else
             {
                 if(limits[coluna] == 0x01)
+                {
                     changeMap();
-                x1 = x0;
-                linha = x0;
-                coluna = y0;
+                    x1 = x0;
+                    linha = x0;
+                    coluna = y0;
+                }else{
+                    x1 = 0x40;
+                    linha = 0x40;
+                }
+                    //coluna = y0;
             }
-            hold = 0;
+
+                //coluna = y0;
+            delay(500 - down);
+         //   hold = 0;
         }
-        else if(left & hold)
+        else if((left > limite_analise) && (right < limite_analise) && (down < limite_analise) && (up < limite_analise))
         {
             coluna ++;  // Para a coluna, basta incrementar ou decrementar o índice no qual o led irá acender (buffer[i])
             if(coluna == 7) // Condição para colisão com a borda
             {
                 if((limits[coluna] &  (~linha)) == limits[coluna])
+                {
                     changeMap();
-                coluna = y0;
-                linha = x0;
+                    x1 = x0;
+                    linha = x0;
+                    coluna = y0;
+                }else{
+                    coluna = 6;//y0;
+                }
+                //linha = x0;
             }
+            delay(500 - left);
 
-            hold = 0;
+          //  hold = 0;
         }
-        else if(right & hold)
+        else if ((right > limite_analise) && (left < limite_analise) && (down < limite_analise) && (up < limite_analise))
         {
             coluna --;
             if(coluna == 0) // Condição para colisão com a borda
             {
                 if((limits[coluna] & (~linha)) == limits[coluna])
+                {
                     changeMap();
-                coluna = y0;
-                linha = x0;
+                    x1 = x0;
+                    linha = x0;
+                    coluna = y0;
+                }else{
+                    coluna = 1;// y0;//1;
+                }
+                    //linha = x0;
             }
-            hold = 0;
+            delay(500 - right);
+         //   hold = 0;
         }
-        if((up + down + left + right) == 0) // Destrava o hold
-            hold = 1;
+        //if((up + down + left + right) == 0) // Destrava o hold
+           // hold = 1;
 
     }
     return 0;
 }
 
 // Interrupção do Timer 0 para trocar de mapa "aleatoriamente".
-#pragma vector=TIMER0_A1_VECTOR
+/*#pragma vector=TIMER0_A1_VECTOR
 __interrupt void Timer_A0(void){
 
     portalIndex ++;
@@ -300,9 +435,56 @@ __interrupt void Timer_A0(void){
     portalY = (portalY << 1);
     if(portalY == 128)
         portalY = 0x02;
-    else
-
-
     portalX ^= 0b10000001;
     TA0CTL &= ~TAIFG;
 }
+*/
+// USCIAB0TX_ISR
+#pragma vector = USCIAB0TX_VECTOR
+__interrupt void USCIAB0TX_ISR(void)
+{
+
+    if(UCB0CTL1 & UCTR)                 // TX mode (UCTR == 1)
+    {
+        if (TX_ByteCtr)                     // TRUE if more bytes remain
+        {
+            TX_ByteCtr--;               // Decrement TX byte counter
+            UCB0TXBUF = TX_Data[TX_ByteCtr];    // Load TX buffer
+        }
+        else                        // no more bytes to send
+        {
+            UCB0CTL1 |= UCTXSTP;            // I2C stop condition
+            IFG2 &= ~UCB0TXIFG;         // Clear USCI_B0 TX int flag
+
+            __bic_SR_register_on_exit(CPUOFF);  // Exit LPM0
+
+            //-------------change_map-------------//
+            portalIndex ++;
+            if(portalIndex == 8)
+            {
+                portalIndex = 0;
+            }
+            portalY = (portalY << 1);
+            if(portalY == 128)
+                portalY = 0x02;
+            portalX ^= 0b10000001;
+            //------------------------------------//
+        }
+    }
+    else // (UCTR == 0)                 // RX mode
+    {
+        RX_ByteCtr--;                       // Decrement RX byte counter
+        if (RX_ByteCtr)                     // RxByteCtr != 0
+        {
+            RX_Data[RX_ByteCtr] = UCB0RXBUF;    // Get received byte
+            if (RX_ByteCtr == 1)            // Only one byte left?
+            UCB0CTL1 |= UCTXSTP;            // Generate I2C stop condition
+        }
+        else                        // RxByteCtr == 0
+        {
+            RX_Data[RX_ByteCtr] = UCB0RXBUF;    // Get final received byte
+            __bic_SR_register_on_exit(CPUOFF);  // Exit LPM0
+        }
+    }
+}
+
